@@ -27,7 +27,7 @@ class TestMeasureLatency(unittest.TestCase):
             self.assertEqual(trace, observed_profile[0])
             self.assertAlmostEqual(
                 measure[0],
-                observed_profile[1].self_cpu_time_total,
+                sum([e[1] for e in observed_profile[1]]),
                 delta=500000,
                 msg="Over 500ms difference on " + ".".join(trace),
             )
@@ -53,7 +53,13 @@ class TestMeasureLatency(unittest.TestCase):
             self.assertEqual(trace, observed_profile[0])
             self.assertAlmostEqual(
                 measure[0],
-                observed_profile[1].self_cpu_time_total,
+                sum([e[1] for e in observed_profile[1]]),
+                delta=500000,
+                msg="Over 500ms difference on " + ".".join(trace),
+            )
+            self.assertAlmostEqual(
+                measure[1],
+                sum([e[2] for e in observed_profile[1]]),
                 delta=500000,
                 msg="Over 500ms difference on " + ".".join(trace),
             )

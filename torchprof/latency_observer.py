@@ -82,11 +82,15 @@ class LatencyObserver:
     @staticmethod
     def _prof_to_latency(prof_measures):
         prof_latency = []
-        for trace, prof in prof_measures:
-            cpu_time = prof.self_cpu_time_total
-            cuda_time = sum([e.cuda_time_total for e in prof.function_events])
+        for trace, base_events in prof_measures:
+            cpu_time = sum([e[1] for e in base_events])
+            cuda_time = sum([e[2] for e in base_events])
             prof_latency.append((trace, (cpu_time, cuda_time)))
         return prof_latency
+
+    @staticmethod
+    def _prof_to_base_events(prof):
+        return [(e.key, e.cuda_time_total, e.cpu_time_total) for e in prof.function_events]
 
     @staticmethod
     def _trace_to_key(trace):
@@ -95,7 +99,6 @@ class LatencyObserver:
     def _input_hook(self, trace):
         def _save_input(_self, module_input):
             self._module_inputs[self._trace_to_key(trace)] = module_input
-
         return _save_input
 
     def _register_module_hooks(self, module, name=None, ancestors=[]):
@@ -113,7 +116,8 @@ class LatencyObserver:
 
         with torch.autograd.profiler.profile(use_cuda=self.use_cuda) as prof:
             child(*child_input)
-        self._prof_measures.append((trace, prof))
+        self._prof_measures.append((trace, self._prof_to_base_events(prof)))
+        del prof
 
         # recurse into children to get layer specific profile metrics
         for gchild_name, gchild in child.named_children():
@@ -155,7 +159,8 @@ class LatencyObserver:
         # get overall module performance, seed module input values
         with torch.autograd.profiler.profile(use_cuda=self.use_cuda) as prof:
             self.module(module_input)
-        self._prof_measures.append((trace, prof))
+        self._prof_measures.append((trace, self._prof_to_base_events(prof)))
+        del prof
 
         # recurse into children to get layer specific profile metrics
         for child_name, child in self.module.named_children():
