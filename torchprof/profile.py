@@ -54,10 +54,9 @@ class Profile(object):
 
     def __str__(self):
         if self.exited:
-            return traces_to_display(
-                self.traces, self.trace_profile_events, self.want_op_file, paths=self.paths
-            )
-        return "<unfinished torchprof.profile>"
+            traces_to_display(self.traces, self.trace_profile_events, self.want_op_file, paths=self.paths)
+        else:
+            return "<unfinished torchprof.profile>"
 
     def __call__(self, *args, **kwargs):
         return self._model(*args, **kwargs)
