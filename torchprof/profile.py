@@ -201,4 +201,4 @@ def traces_to_display(traces, trace_events, want_op_file, show_events=False, pat
     if want_op_file==True:
         export_csv = df.to_csv (r'output_file.csv', index = None, header=True)
     else:
-        return df
+        print(df)
