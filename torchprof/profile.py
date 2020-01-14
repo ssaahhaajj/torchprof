@@ -175,7 +175,7 @@ def traces_to_display(traces, trace_events, want_op_file, show_events=False, pat
                     pre = dt[3] + pre
             depth -= 1
             current = False
-        if self_cpu_time=="" and cpu_time=="" and cuda_time="":
+        if self_cpu_time=="":
             continue
         format_lines.append([name, self_cpu_time, cpu_time, cuda_time])
 
