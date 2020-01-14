@@ -1,7 +1,7 @@
 import functools
 import torch.autograd.profiler as tprofiler
 from collections import namedtuple, defaultdict, OrderedDict
-from pandas import Dataframe
+from pandas import DataFrame
 
 Trace = namedtuple("Trace", ["path", "leaf", "module"])
 Measure = namedtuple("Measure", ["self_cpu_total", "cpu_total", "cuda_total"])
