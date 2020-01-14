@@ -1,6 +1,7 @@
 import functools
 import torch.autograd.profiler as tprofiler
 from collections import namedtuple, defaultdict, OrderedDict
+from pandas import Dataframe
 
 Trace = namedtuple("Trace", ["path", "leaf", "module"])
 Measure = namedtuple("Measure", ["self_cpu_total", "cpu_total", "cuda_total"])
@@ -22,11 +23,12 @@ class Profile(object):
     """Layer by layer profiling of Pytorch models, using the Pytorch autograd profiler.
     """
 
-    def __init__(self, model, enabled=True, use_cuda=False, paths=None):
+    def __init__(self, model, enabled=True, use_cuda=False, want_op_file=False, paths=None):
         self._model = model
         self.enabled = enabled
         self.use_cuda = use_cuda
         self.paths = paths
+        self.want_op_file=want_op_file
 
         self.entered = False
         self.exited = False
@@ -97,6 +99,7 @@ class Profile(object):
             return traces_to_display(
                 self.traces,
                 self.trace_profile_events,
+                self.want_op_file,
                 show_events=show_events,
                 paths=self.paths,
             )
@@ -112,7 +115,7 @@ def flatten_tree(t, depth=0):
     return flat
 
 
-def traces_to_display(traces, trace_events, show_events=False, paths=None):
+def traces_to_display(traces, trace_events, want_op_file, show_events=False, paths=None):
     """Construct human readable output of the profiler traces and events.
     """
     tree = OrderedDict()
@@ -125,9 +128,7 @@ def traces_to_display(traces, trace_events, show_events=False, paths=None):
         for depth, name in enumerate(path, 1):
             if name not in current_tree:
                 current_tree[name] = OrderedDict()
-            if depth == len(path) and (
-                (paths is None and leaf) or (paths is not None and path in paths)
-            ):
+            if depth == len(path) and ((paths is None and leaf) or (paths is not None and path in paths)):
                 # tree measurements have key None, avoiding name conflict
                 if show_events:
                     for event in events:
@@ -175,22 +176,29 @@ def traces_to_display(traces, trace_events, show_events=False, paths=None):
                     pre = dt[3] + pre
             depth -= 1
             current = False
-        format_lines.append([pre + name, self_cpu_time, cpu_time, cuda_time])
+        format_lines.append([name, self_cpu_time, cpu_time, cuda_time])
 
     # construct the table
-    heading = ("Module", "Self CPU total", "CPU total", "CUDA total")
-    max_lens = [max(map(len, col)) for col in zip(*([heading] + format_lines))]
+    mynn={"Layer Name":[],"Self CPU total":[],"CPU toal":[],"GPU total":[]}
+
+    #heading = ("Module", "Self CPU totacl", "CPU total", "CUDA total")
+    #max_lens = [max(map(len, col)) for col in zip(*([heading] + format_lines))]
     # create the heading
-    disp = "{:<{}s}".format(heading[0], max_lens[0]) + " | "
-    disp += "{:>{}s}".format(heading[1], max_lens[1]) + " | "
-    disp += "{:>{}s}".format(heading[2], max_lens[2]) + " | "
-    disp += "{:>{}s}".format(heading[3], max_lens[3]) + "\n"
-    disp += "-|-".join(["-" * mlen for mlen in max_lens]) + "\n"
+    #     disp = "{:<{}s}".format(heading[0], max_lens[0]) + " | "
+    #     disp += "{:>{}s}".format(heading[1], max_lens[1]) + " | "
+    #     disp += "{:>{}s}".format(heading[2], max_lens[2]) + " | "
+    #     disp += "{:>{}s}".format(heading[3], max_lens[3]) + "\n"
+    #     disp += "-|-".join(["-" * mlen for mlen in max_lens]) + "\n"
     for line in format_lines:
         label, self_cpu_time, cpu_time, cuda_time = line
-        disp += "{:<{}s}".format(label, max_lens[0]) + " | "
-        disp += "{:>{}s}".format(self_cpu_time, max_lens[1]) + " | "
-        disp += "{:>{}s}".format(cpu_time, max_lens[2]) + " | "
-        disp += "{:>{}s}".format(cuda_time, max_lens[3]) + "\n"
-
-    return disp
+        mynn["Layer Name"].append(str(label))
+        mynn["Self CPU total"].append(str(self_cpu_time))
+        mynn["CPU total"].append(str(cpu_time))
+        mynn["GPU total"].append(str(cuda_time))
+        
+    df = DataFrame(mynn, columns= ["Layer Name","Self CPU total","CPU total","GPU total"])
+    
+    if want_op_file==True:
+        export_csv = df.to_csv (r'output_file.csv', index = None, header=True)
+    else:
+        print(df)
