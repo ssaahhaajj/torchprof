@@ -55,7 +55,7 @@ class Profile(object):
     def __str__(self):
         if self.exited:
             return traces_to_display(
-                self.traces, self.trace_profile_events, paths=self.paths
+                self.traces, self.trace_profile_events, self.want_op_file, paths=self.paths
             )
         return "<unfinished torchprof.profile>"
 
