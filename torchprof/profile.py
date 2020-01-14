@@ -179,7 +179,7 @@ def traces_to_display(traces, trace_events, want_op_file, show_events=False, pat
         format_lines.append([name, self_cpu_time, cpu_time, cuda_time])
 
     # construct the table
-    mynn={"Layer Name":[],"Self CPU total":[],"CPU toal":[],"GPU total":[]}
+    mynn={"Layer Name":[],"Self CPU total":[],"CPU total":[],"GPU total":[]}
 
     #heading = ("Module", "Self CPU totacl", "CPU total", "CUDA total")
     #max_lens = [max(map(len, col)) for col in zip(*([heading] + format_lines))]
